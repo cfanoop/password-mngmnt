@@ -5,10 +5,6 @@ import java.util.Optional;
 
 public interface PassManage {
 
-	public void setContext(Context context);
-
-	public void setCndt(Conductor cndt);
-
 	Optional<Collection<String>> read(String key);
 
 	void update(String key, String pass, boolean isUpdate);

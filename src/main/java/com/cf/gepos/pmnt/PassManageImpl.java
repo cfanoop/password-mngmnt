@@ -5,17 +5,17 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -23,12 +23,20 @@ public class PassManageImpl implements PassManage {
 
 	private Context context;
 
-	private Map<String, List<String>> scache = new HashMap<>();
+	private Map<String, List<String>> scache = new ConcurrentHashMap<>();
 
 	private Conductor cndt;
 
+	private ContentRepository contentRepository;
+
+	private Lock repolock = new ReentrantLock();
+
 	public void setContext(Context context) {
 		this.context = context;
+	}
+
+	public void setContentRepository(ContentRepository contentRepository) {
+		this.contentRepository = contentRepository;
 	}
 
 	public void setCndt(Conductor cndt) {
@@ -37,13 +45,31 @@ public class PassManageImpl implements PassManage {
 
 	private void init() {
 		try {
-			String fcontent = Files.readString(context.getPfile());
+			if (context.getLoginPass().isBlank())
+				throw new LoginError();
+			String fcontent = contentRepository.readContent();
 			String pcontent = cndt.process((e) -> e.decrypt(fcontent));
 			String[] kps = pcontent.split("\n");
 			scache.putAll(Arrays.stream(kps).filter(kp -> !kp.isEmpty()).map(kp -> kp.split(" "))
 					.filter(stk -> stk.length > 1).collect(Collectors.groupingBy(stk -> stk[0],
 							Collectors.mapping(stk -> stk[1], Collectors.toList()))));
 
+			if (!context.isLoginCompleted()) {
+
+				Optional.ofNullable(scache.get("me")).ifPresentOrElse((mePass) -> {
+					if (mePass.stream().anyMatch(a -> a.equals(context.getLoginPass()))) {
+						context.setLoginCompleted(true);
+					} else {
+						scache.clear();
+						throw new LoginError();
+					}
+				}, () -> {
+					scache.put("me", Stream.of(context.getLoginPass()).collect(Collectors.toList()));
+					context.setLoginCompleted(true);
+					this.writeFile();
+				});
+
+			}
 		} catch (NoSuchFileException e) {
 			System.out.println("Message  -  No File");
 		} catch (IOException e) {
@@ -91,16 +117,17 @@ public class PassManageImpl implements PassManage {
 	}
 
 	private void writeFile() {
+		repolock.lock();
 		try {
 			String scontent = scache.entrySet().stream()
 					.flatMap(v -> v.getValue().stream().map(kv -> v.getKey() + " " + kv))
 					.collect(Collectors.joining("\n"));
 			String pcontent = cndt.process((e) -> e.encrypt(scontent));
-
-			Files.writeString(context.getPfile(), pcontent, new StandardOpenOption[] { StandardOpenOption.CREATE,
-					StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE });
+			contentRepository.writeContent(pcontent);
 		} catch (IOException e) {
 			e.printStackTrace();
+		} finally {
+			repolock.unlock();
 		}
 	}
 

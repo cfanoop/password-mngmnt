@@ -1,4 +1,4 @@
-package com.cf.gepos.pmnt;
+package com.cf.gepos.pmnt.runner;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -54,6 +54,7 @@ public class CmdLineUser {
 					break;
 				case 9:
 					userInps.put("op", "stop");
+					inputScanner.close();
 					break;
 				default:
 					System.out.println("Invalid Entry");
