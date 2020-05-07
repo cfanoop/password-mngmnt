@@ -54,6 +54,7 @@ public class CmdLineUser {
 					break;
 				case 9:
 					userInps.put("op", "stop");
+					inputScanner.close();
 					break;
 				default:
 					System.out.println("Invalid Entry");
