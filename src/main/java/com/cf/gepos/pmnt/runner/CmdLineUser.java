@@ -1,4 +1,4 @@
-package com.cf.gepos.pmnt;
+package com.cf.gepos.pmnt.runner;
 
 import java.util.Collection;
 import java.util.HashMap;

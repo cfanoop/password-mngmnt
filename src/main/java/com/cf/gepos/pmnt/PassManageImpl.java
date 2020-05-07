@@ -5,15 +5,12 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -27,8 +24,14 @@ public class PassManageImpl implements PassManage {
 
 	private Conductor cndt;
 
+	private ContentRepository contentRepository;
+
 	public void setContext(Context context) {
 		this.context = context;
+	}
+
+	public void setContentRepository(ContentRepository contentRepository) {
+		this.contentRepository = contentRepository;
 	}
 
 	public void setCndt(Conductor cndt) {
@@ -37,7 +40,7 @@ public class PassManageImpl implements PassManage {
 
 	private void init() {
 		try {
-			String fcontent = Files.readString(context.getPfile());
+			String fcontent = contentRepository.readContent();
 			String pcontent = cndt.process((e) -> e.decrypt(fcontent));
 			String[] kps = pcontent.split("\n");
 			scache.putAll(Arrays.stream(kps).filter(kp -> !kp.isEmpty()).map(kp -> kp.split(" "))
@@ -96,9 +99,7 @@ public class PassManageImpl implements PassManage {
 					.flatMap(v -> v.getValue().stream().map(kv -> v.getKey() + " " + kv))
 					.collect(Collectors.joining("\n"));
 			String pcontent = cndt.process((e) -> e.encrypt(scontent));
-
-			Files.writeString(context.getPfile(), pcontent, new StandardOpenOption[] { StandardOpenOption.CREATE,
-					StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE });
+			contentRepository.writeContent(pcontent);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

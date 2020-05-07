@@ -1,15 +1,20 @@
-package com.cf.gepos.pmnt;
+package com.cf.gepos.pmnt.runner;
 
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 
+import com.cf.gepos.pmnt.Conductor;
+import com.cf.gepos.pmnt.ContentRepositoryImpl;
+import com.cf.gepos.pmnt.Context;
+import com.cf.gepos.pmnt.PassManageImpl;
+
 public class PasswordManager {
 
 	private CmdLineUser ri;
 
-	private PassManage pssmange;
+	private PassManageImpl pssmange;
 
 	public static void main(String[] args) {
 
@@ -25,8 +30,11 @@ public class PasswordManager {
 		ctxt.setKeyfile(Paths.get("/Users/anoopchiramel/Files/temp/pass.txt"));
 		ctxt.setPfile(Paths.get("/Users/anoopchiramel/Files/temp/abc1.txt"));
 		Conductor cdt = new Conductor(ctxt);
+		ContentRepositoryImpl repo = new ContentRepositoryImpl();
 		pssmange.setCndt(cdt);
 		pssmange.setContext(ctxt);
+		repo.setContext(ctxt);
+		pssmange.setContentRepository(repo);
 
 		String op = "";
 		System.out.println("Starting Password Manager");

@@ -46,7 +46,7 @@
 					<archive>
 						<manifest>
 							<addClasspath>true</addClasspath>
-							<mainClass>com.cf.gepos.pmnt.PasswordManager</mainClass>
+							<mainClass>com.cf.gepos.pmnt.runner.PasswordManager</mainClass>
 							<classpathPrefix>lib/</classpathPrefix>
 						</manifest>
 					</archive>
